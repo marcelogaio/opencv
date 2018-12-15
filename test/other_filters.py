@@ -32,9 +32,10 @@ def sketchSobel(frame):
 
 
 def showWindow(title, frame, x, y):
+    fps = round(cv.getTickFrequency() / (cv.getTickCount() - start))
     cv.namedWindow(title, cv.WINDOW_NORMAL)
     cv.resizeWindow(title, 800, 500)
-    # cv.putText(frame, text, (0, 30), cv.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255))
+    cv.putText(frame, str(fps), (0, 30), cv.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255))
     cv.imshow(title, frame)
     cv.moveWindow(title, x, y)
 
@@ -46,6 +47,7 @@ capture.set(cv.CAP_PROP_FPS, 1)
 
 # loop frames
 while True:
+    start = cv.getTickCount()
     _, frame = capture.read()
     if frame is not None:
         frame = preProcess(frame)

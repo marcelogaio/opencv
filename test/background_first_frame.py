@@ -11,7 +11,8 @@ frame_first_gray = cv.cvtColor(frame_first, cv.COLOR_BGR2GRAY)
 frame_first_blurred = cv.GaussianBlur(frame_first_gray, (5, 5), 0)
 
 while True:
-    ret, frame = capture.read()
+    start = cv.getTickCount()
+    _, frame = capture.read()
 
     if frame is None:
         break
