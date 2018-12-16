@@ -4,7 +4,9 @@ scale = 1
 delta = 0
 ddepth = cv.CV_16S
 canny_threshold = 10
-invert_threshold = 20
+filter_threshold = 20
+canny_index = 3
+kernel_size = 3
 
 def preProcess(frame):
     # Convert image to grayscale
@@ -14,15 +16,15 @@ def preProcess(frame):
     return frame
 
 
-def sketchCanny(frame, threshold):
+def sketchCanny(frame):
     # Extract Edges
-    frame = cv.Canny(frame, threshold, threshold*4, 3)
+    frame = cv.Canny(frame, canny_threshold, canny_threshold*canny_index, kernel_size)
     return frame
 
 
-def sketchInvert(frame, threshold):
+def sketchInvert(frame):
     # Do an invert binarize the image
-    _, frame = cv.threshold(frame, threshold, 255, cv.THRESH_BINARY)
+    _, frame = cv.threshold(frame, filter_threshold, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C)
     return frame
 
 
@@ -49,14 +51,24 @@ def updateImage(title, frame):
     cv.imshow(title, frame)
 
 
-def on_trackbar_canny(val):
+def on_trackbar_canny_threshold(val):
     global canny_threshold
     canny_threshold = val
 
 
-def on_trackbar_threshold(val):
-    global invert_threshold
-    invert_threshold = val
+def on_trackbar_canny_index(val):
+    global canny_index
+    canny_index = val
+
+
+def on_trackbar_kernel_size(val):
+    global kernel_size
+    kernel_size = val
+
+
+def on_trackbar_filter_threshold(val):
+    global filter_threshold
+    filter_threshold = val
 
 
 # init video capture
@@ -64,12 +76,17 @@ capture = cv.VideoCapture(0)
 capture.set(cv.CAP_PROP_FPS, 1)
 
 # declare trackbars
-trackbar_canny = [['Canny Threshold', 0, 100, canny_threshold, on_trackbar_canny]]
-trackbar_threshold = [['Invert Threshold', 0, 255, invert_threshold, on_trackbar_threshold]]
+trackbar_canny_threshold = ['Canny Threshold', 0, 200, canny_threshold, on_trackbar_canny_threshold]
+trackbar_canny_index = ['Canny Index', 0, 100, canny_index, on_trackbar_canny_index]
+trackbar_kernel_size = ['Kernel Size', 0, 100, kernel_size, on_trackbar_kernel_size]
+trackbar_filter_threshold = ['Invert Threshold', 0, 255, filter_threshold, on_trackbar_filter_threshold]
+trackbars = [trackbar_canny_threshold, trackbar_canny_index, trackbar_kernel_size, trackbar_filter_threshold]
 
 # create windows
-createWindow("Canny", 20, 20, trackbar_canny)
-createWindow("Canny + Invert", 820, 20, trackbar_threshold)
+createWindow("Original", 20, 20, trackbars)
+createWindow("Filter", 820, 20)
+createWindow("Canny", 20, 520)
+createWindow("Filter+Canny", 820, 520)
 
 # loop frames
 while True:
@@ -77,9 +94,14 @@ while True:
     _, frame = capture.read()
     if frame is not None:
         frame = preProcess(frame)
+        threshold_frame = sketchInvert(frame)
+        canny_frame = sketchCanny(frame)
+        threshold_canny_frame = sketchCanny(threshold_frame)
         # update images
-        updateImage("Canny", sketchCanny(frame, canny_threshold))
-        updateImage("Canny + Invert", sketchCanny(sketchInvert(frame, invert_threshold), canny_threshold))
+        updateImage("Original", frame)
+        updateImage("Filter", threshold_frame)
+        updateImage("Canny", canny_frame)
+        updateImage("Filter+Canny", threshold_canny_frame)
 
     # capture esc key
     key = cv.waitKey(1)
