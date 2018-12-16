@@ -4,6 +4,7 @@ scale = 1
 delta = 0
 ddepth = cv.CV_16S
 canny_threshold = 10
+invert_threshold = 20
 
 def preProcess(frame):
     # Convert image to grayscale
@@ -13,21 +14,16 @@ def preProcess(frame):
     return frame
 
 
-def sketchCanny(frame):
+def sketchCanny(frame, threshold):
     # Extract Edges
-    frame = cv.Canny(frame, canny_threshold, canny_threshold*3, 3)
+    frame = cv.Canny(frame, threshold, threshold*4, 3)
     return frame
 
 
-def sketchInvert(frame):
+def sketchInvert(frame, threshold):
     # Do an invert binarize the image
-    _, frame = cv.threshold(frame, 20, 255, cv.THRESH_BINARY)
+    _, frame = cv.threshold(frame, threshold, 255, cv.THRESH_BINARY)
     return frame
-
-
-def on_trackbar_canny(val):
-    canny_threshold = val
-    print(val)
 
 
 def createWindow(title, x, y, trackbar_array=()):
@@ -53,16 +49,27 @@ def updateImage(title, frame):
     cv.imshow(title, frame)
 
 
+def on_trackbar_canny(val):
+    global canny_threshold
+    canny_threshold = val
+
+
+def on_trackbar_threshold(val):
+    global invert_threshold
+    invert_threshold = val
+
+
 # init video capture
 capture = cv.VideoCapture(0)
 capture.set(cv.CAP_PROP_FPS, 1)
 
 # declare trackbars
 trackbar_canny = [['Canny Threshold', 0, 100, canny_threshold, on_trackbar_canny]]
+trackbar_threshold = [['Invert Threshold', 0, 255, invert_threshold, on_trackbar_threshold]]
 
 # create windows
 createWindow("Canny", 20, 20, trackbar_canny)
-createWindow("Canny + Invert", 820, 20)
+createWindow("Canny + Invert", 820, 20, trackbar_threshold)
 
 # loop frames
 while True:
@@ -71,8 +78,8 @@ while True:
     if frame is not None:
         frame = preProcess(frame)
         # update images
-        updateImage("Canny", sketchCanny(frame))
-        updateImage("Canny + Invert", sketchCanny(sketchInvert(frame)))
+        updateImage("Canny", sketchCanny(frame, canny_threshold))
+        updateImage("Canny + Invert", sketchCanny(sketchInvert(frame, invert_threshold), canny_threshold))
 
     # capture esc key
     key = cv.waitKey(1)
